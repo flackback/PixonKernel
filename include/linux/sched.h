@@ -2013,4 +2013,9 @@ static inline unsigned long map_util_freq(unsigned long util,
 {
 	return (freq + (freq >> 2)) * util / cap;
 }
+
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+int do_stune_boost(char *st_name, int boost);
+int reset_stune_boost(char *st_name);
+#endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 #endif
