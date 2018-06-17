@@ -75,6 +75,9 @@ struct schedtune {
 	 * the value when Dynamic SchedTune Boost is reset.
 	 */
 	int boost_default;
+
+	/* Dynamic boost value for tasks on that SchedTune CGroup */
+	int dynamic_boost;
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 };
 
@@ -115,6 +118,7 @@ root_schedtune = {
 	.prefer_high_cap = false,
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
 	.boost_default = 0,
+	.dynamic_boost = 0,
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 };
 
@@ -722,6 +726,60 @@ boost_write(struct cgroup_subsys_state *css, struct cftype *cft,
 	return 0;
 }
 
+int schedtune_prefer_high_cap(struct task_struct *p)
+{
+	struct schedtune *st;
+	int prefer_high_cap;
+
+	if (unlikely(!schedtune_initialized))
+		return 0;
+
+	/* Get prefer_high_cap value */
+	rcu_read_lock();
+	st = task_schedtune(p);
+	prefer_high_cap = st->prefer_high_cap;
+	rcu_read_unlock();
+
+	return prefer_high_cap;
+}
+
+static u64 prefer_high_cap_read(struct cgroup_subsys_state *css,
+				struct cftype *cft)
+{
+	struct schedtune *st = css_st(css);
+
+	return st->prefer_high_cap;
+}
+
+static int prefer_high_cap_write(struct cgroup_subsys_state *css,
+				 struct cftype *cft, u64 prefer_high_cap)
+{
+	struct schedtune *st = css_st(css);
+	st->prefer_high_cap = !!prefer_high_cap;
+
+	return 0;
+}
+
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+static s64
+dynamic_boost_read(struct cgroup_subsys_state *css, struct cftype *cft)
+{
+	struct schedtune *st = css_st(css);
+
+	return st->dynamic_boost;
+}
+
+static int
+dynamic_boost_write(struct cgroup_subsys_state *css, struct cftype *cft,
+	    s64 dynamic_boost)
+{
+	struct schedtune *st = css_st(css);
+	st->dynamic_boost = dynamic_boost;
+
+	return 0;
+}
+#endif // CONFIG_DYNAMIC_STUNE_BOOST
+
 static struct cftype files[] = {
 #ifdef CONFIG_SCHED_WALT
 	{
@@ -745,7 +803,21 @@ static struct cftype files[] = {
 		.read_u64 = prefer_idle_read,
 		.write_u64 = prefer_idle_write,
 	},
-	{ }	/* terminate */
+	{
+		.name = "prefer_high_cap",
+		.read_u64 = prefer_high_cap_read,
+		.write_u64 = prefer_high_cap_write,
+	},
+
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+	{
+		.name = "dynamic_boost",
+		.read_s64 = dynamic_boost_read,
+		.write_s64 = dynamic_boost_write,
+	},
+#endif // CONFIG_DYNAMIC_STUNE_BOOST
+	{} /* terminate */
+
 };
 
 static int
