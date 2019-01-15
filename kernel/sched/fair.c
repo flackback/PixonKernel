@@ -5869,21 +5869,15 @@ static unsigned long __cpu_norm_util(unsigned long util, unsigned long capacity)
  * If p is boosted, prefer that p runs on a faster cpu; otherwise, allow p
  * to run on any cpu.
  */
-static inline bool
-cpu_is_in_target_set(struct task_struct *p, int cpu)
-{
-	struct root_domain *rd = cpu_rq(cpu)->rd;
-	int first_cpu = (schedtune_task_boost(p)) ?
-		rd->mid_cap_orig_cpu : rd->min_cap_orig_cpu;
-	int next_usable_cpu = cpumask_next(first_cpu - 1, &p->cpus_allowed);
-	return cpu >= next_usable_cpu || next_usable_cpu >= nr_cpu_ids;
-}
+
 static inline bool
 bias_to_this_cpu(struct task_struct *p, int cpu, struct cpumask *rtg_target)
 {
 	bool base_test = cpumask_test_cpu(cpu, &p->cpus_allowed) &&
-			!__cpu_overutilized(cpu, task_util(p));
-	bool rtg_test = rtg_target && cpumask_test_cpu(cpu, rtg_target);
+			cpu_active(cpu) && task_fits_max(p, cpu) &&
+			!__cpu_overutilized(cpu, task_util(p)) &&
+			cpu_is_in_target_set(p, cpu);
+ 	bool rtg_test = rtg_target && cpumask_test_cpu(cpu, rtg_target);
 
 	return base_test && (!rtg_target || rtg_test);
 }
@@ -7553,6 +7547,16 @@ enum fastpaths {
  * If p is boosted, prefer that p runs on a faster cpu; otherwise, allow p
  * to run on any cpu.
  */
+
+static inline bool
+cpu_is_in_target_set(struct task_struct *p, int cpu)
+{
+	struct root_domain *rd = cpu_rq(cpu)->rd;
+	int first_cpu = (schedtune_task_boost(p)) ?
+		rd->mid_cap_orig_cpu : rd->min_cap_orig_cpu;
+	int next_usable_cpu = cpumask_next(first_cpu - 1, &p->cpus_allowed);
+	return cpu >= next_usable_cpu || next_usable_cpu >= nr_cpu_ids;
+}
 
 static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 				   bool boosted, bool prefer_idle,
