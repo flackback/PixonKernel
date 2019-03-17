@@ -786,6 +786,8 @@ static int add_opp(struct clk_osm *c, struct device **device_list, int count)
 		 * this information will be used by thermal mitigation and the
 		 * scheduler.
 		 */
+
+		/*
 		if (rate == min_rate) {
 			for (i = 0; i < count; i++) {
 				pr_info("Set OPP pair (%lu Hz, %d uv) on %s\n",
@@ -800,8 +802,14 @@ static int add_opp(struct clk_osm *c, struct device **device_list, int count)
 			}
 			break;
 		}
+		*/
 
-		if (min_rate == max_rate)
+		for (i = 0; i < count; i++) {
+			pr_info("Set OPP pair (%lu Hz, %d uv) on %s\n",
+				rate, uv, dev_name(device_list[i]));
+		}
+
+		if (min_rate == max_rate || (rate == max_rate && max_rate != min_rate))
 			break;
 	}
 	return 0;
