@@ -5834,15 +5834,7 @@ static unsigned long __cpu_norm_util(unsigned long util, unsigned long capacity)
  * If p is boosted, prefer that p runs on a faster cpu; otherwise, allow p
  * to run on any cpu.
  */
-static inline bool
-cpu_is_in_target_set(struct task_struct *p, int cpu)
-{
-	struct root_domain *rd = cpu_rq(cpu)->rd;
-	int first_cpu = (schedtune_task_boost(p)) ?
-		rd->mid_cap_orig_cpu : rd->min_cap_orig_cpu;
-	int next_usable_cpu = cpumask_next(first_cpu - 1, &p->cpus_allowed);
-	return cpu >= next_usable_cpu || next_usable_cpu >= nr_cpu_ids;
-}
+
 static inline bool
 bias_to_this_cpu(struct task_struct *p, int cpu, struct cpumask *rtg_target)
 {
@@ -7409,6 +7401,10 @@ static inline bool task_fits_max(struct task_struct *p, int cpu)
 			return false;
 	}
 
+	if (task_boost_policy(p) == SCHED_BOOST_ON_BIG &&
+			is_min_capacity_cpu(cpu))
+		return false;
+
 	return task_fits_capacity(p, capacity, cpu);
 }
 
@@ -7923,6 +7919,14 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 
 	} while (sg = sg->next, sg != sd->groups);
 
+	if (prefer_idle && (best_idle_cpu != -1)) {
+		trace_sched_find_best_target(p, prefer_idle, min_util, cpu,
+					     best_idle_cpu, best_active_cpu,
+					     -1, best_idle_cpu, -1);
+
+		return best_idle_cpu;
+	}
+
 	if (best_idle_cpu != -1 && !is_packing_eligible(p, target_cpu, fbt_env,
 					active_cpus_count, best_idle_cstate,
 					boosted)) {
@@ -7956,14 +7960,6 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 		if (curr_tsk && schedtune_task_boost_rcu_locked(curr_tsk)) {
 			target_cpu = best_idle_cpu;
 		}
-	}
-
-	if (prefer_idle && (best_idle_cpu != -1)) {
-		trace_sched_find_best_target(p, prefer_idle, min_util, cpu,
-					     best_idle_cpu, best_active_cpu,
-					     -1, best_idle_cpu, -1);
-
-		return best_idle_cpu;
 	}
 
 	if (target_cpu == -1)
