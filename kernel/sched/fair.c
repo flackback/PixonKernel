@@ -7776,8 +7776,6 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 				if (boosted && p->prio <= DEFAULT_PRIO)
 					continue;
 					
-				 * high priority & prefer_high_cap.
-				 */
 				if (prefer_high_cap && p->prio <= DEFAULT_PRIO)
 					continue;
 
