@@ -49,6 +49,7 @@
 #ifndef GOODIX_DRM_INTERFACE_WA
 #include <linux/msm_drm_notify.h>
 #endif
+#include <linux/sched.h>
 
 #include "gf_spi.h"
 
@@ -65,6 +66,15 @@
 
 #define WAKELOCK_HOLD_TIME 2000 /* in ms */
 #define FP_UNLOCK_REJECTION_TIMEOUT (WAKELOCK_HOLD_TIME - 500)
+
+#define FOD_BOOST_MS 1500
+#define FOD_BOOST_INTERVAL (1500 * USEC_PER_MSEC)
+
+static struct workqueue_struct *fod_boost_wq;
+
+static struct work_struct fod_boost_work;
+static struct delayed_work fod_boost_rem;
+static bool fod_boost_active;
 
 #define GF_SPIDEV_NAME     "goodix,fingerprint"
 /*device name after register in charater*/
@@ -102,6 +112,52 @@ struct gf_key_map maps[] = {
 	{ EV_KEY, GF_NAV_INPUT_HEAVY },
 #endif
 };
+
+static void do_fod_boost_rem(struct work_struct *work)
+{
+	unsigned int ret;
+
+	/* Update policies for all online CPUs */
+	if (fod_boost_active) {
+		ret = sched_set_boost(0);
+		if (ret)
+			pr_err("cpu-boost: FOD boost disable failed\n");
+		fod_boost_active = false;
+	}
+}
+
+static void do_fod_boost(struct work_struct *work)
+{
+	unsigned int ret;
+
+	cancel_delayed_work_sync(&fod_boost_rem);
+	if (fod_boost_active == false) {
+		ret = sched_set_boost(1);
+		if (ret)
+			pr_err("cpu-boost: FOD boost enable failed\n");
+		else
+			fod_boost_active = true;
+	}
+	queue_delayed_work(fod_boost_wq, &fod_boost_rem,
+			   msecs_to_jiffies(FOD_BOOST_MS));
+}
+
+static void fod_cpuboost(void)
+{
+	u64 now;
+	static u64 last_time;
+
+	now = ktime_to_us(ktime_get());
+	if (now - last_time < FOD_BOOST_INTERVAL)
+		return;
+
+	if (work_pending(&fod_boost_work))
+		return;
+
+	queue_work(fod_boost_wq, &fod_boost_work);
+	last_time = ktime_to_us(ktime_get());
+}
+
 
 static void gf_enable_irq(struct gf_dev *gf_dev)
 {
@@ -563,6 +619,7 @@ static irqreturn_t gf_irq(int irq, void *handle)
 		input_report_key(gf_dev->input, key_input, 0);
 		input_sync(gf_dev->input);
 		gf_dev->wait_finger_down = false;
+		fod_cpuboost();
 		schedule_work(&gf_dev->work);
 	}
 
@@ -835,6 +892,12 @@ static int gf_probe(struct platform_device *pdev)
 #ifndef GOODIX_DRM_INTERFACE_WA
 	INIT_WORK(&gf_dev->work, notification_work);
 #endif
+
+	fod_boost_wq = alloc_workqueue("fod_cpuboost_wq", WQ_HIGHPRI, 0);
+	if (!fod_boost_wq)
+		return -EFAULT;
+	INIT_WORK(&fod_boost_work, do_fod_boost);
+	INIT_DELAYED_WORK(&fod_boost_rem, do_fod_boost_rem);
 
 	if (gf_parse_dts(gf_dev)) {
 		goto error_hw;
