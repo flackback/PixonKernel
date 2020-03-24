@@ -251,6 +251,8 @@ struct qpnp_pon {
 	spinlock_t		fs_sync_lock;
 	struct notifier_block	pon_nb;
 	bool			legacy_hard_reset_offset;
+	struct delayed_work	fsync_timer;
+	spinlock_t		fs_sync_lock;
 };
 
 static int pon_ship_mode_en;
@@ -2512,6 +2514,10 @@ static int qpnp_pon_probe(struct platform_device *pdev)
 			rc);
 		return rc;
 	}
+
+	pon->fs_sync_counter = 0;
+	spin_lock_init(&pon->fs_sync_lock);
+	INIT_DELAYED_WORK(&pon->fsync_timer, fs_sync_func);
 
 	if (sys_reset)
 		sys_reset_dev = pon;
