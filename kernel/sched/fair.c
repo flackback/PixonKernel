@@ -3869,7 +3869,114 @@ util_est_dequeue(struct cfs_rq *cfs_rq, struct task_struct *p, bool task_sleep)
 	trace_sched_util_est_task(p, &p->se.avg);
 }
 
+
 #else /* CONFIG_SMP */
+
+/*
+ * Check whether cpu is in the fastest set of cpu's that p should run on.
+ * If p is prefer_high_cap, prefer that p runs on a faster cpu; otherwise,
+ * allow p to run on any cpu.
+ */
+static inline bool cpu_is_in_target_set(struct task_struct *p, int cpu)
+{
+	struct root_domain *rd = cpu_rq(cpu)->rd;
+	int first_cpu, next_usable_cpu;
+#ifdef CONFIG_SCHED_TUNE
+	if (schedtune_prefer_high_cap(p)) {
+#else
+	if (uclamp_boosted(p)) {
+#endif
+		first_cpu = rd->mid_cap_orig_cpu != -1 ? rd->mid_cap_orig_cpu :
+			    rd->max_cap_orig_cpu;
+
+	} else {
+		first_cpu = rd->min_cap_orig_cpu;
+	}
+
+	next_usable_cpu = cpumask_next(first_cpu - 1, &p->cpus_allowed);
+	return cpu >= next_usable_cpu || next_usable_cpu >= nr_cpu_ids;
+}
+
+static inline bool
+bias_to_this_cpu(struct task_struct *p, int cpu, int start_cpu)
+{
+	bool base_test = cpumask_test_cpu(cpu, &p->cpus_allowed) &&
+			cpu_active(cpu) && cpu_is_in_target_set(p, cpu);
+	bool start_cap_test = (capacity_orig_of(cpu) >=
+					capacity_orig_of(start_cpu));
+
+	return base_test && start_cap_test;
+}
+
+static inline bool task_fits_capacity(struct task_struct *p,
+					long capacity,
+					int cpu)
+{
+	unsigned int margin;
+
+	/*
+	 * Derive upmigration/downmigrate margin wrt the src/dest
+	 * CPU.
+	 */
+	if (capacity_orig_of(task_cpu(p)) > capacity_orig_of(cpu))
+		margin = schedtune_task_boost(p) > 0 &&
+			  !schedtune_prefer_high_cap(p) &&
+			   p->prio <= DEFAULT_PRIO ?
+			sched_capacity_margin_down_boosted[task_cpu(p)] :
+			sched_capacity_margin_down[task_cpu(p)];
+	else
+		margin = schedtune_task_boost(p) > 0 &&
+			  !schedtune_prefer_high_cap(p) &&
+			   p->prio <= DEFAULT_PRIO ?
+			sched_capacity_margin_up_boosted[task_cpu(p)] :
+			sched_capacity_margin_up[task_cpu(p)];
+
+	return capacity * 1024 > uclamp_task(p) * margin;
+}
+
+static inline bool task_fits_max(struct task_struct *p, int cpu)
+{
+	unsigned long capacity = capacity_orig_of(cpu);
+	unsigned long max_capacity = cpu_rq(cpu)->rd->max_cpu_capacity.val;
+	unsigned long task_boost = per_task_boost(p);
+
+	if (capacity == max_capacity)
+		return true;
+
+	if (is_min_capacity_cpu(cpu)) {
+		if (task_boost_policy(p) == SCHED_BOOST_ON_BIG ||
+			task_boost > 0 ||
+			walt_should_kick_upmigrate(p, cpu))
+			return false;
+	} else { /* mid cap cpu */
+		if (task_boost > TASK_BOOST_ON_MID)
+			return false;
+	}
+
+	return task_fits_capacity(p, capacity, cpu);
+}
+
+static inline bool task_demand_fits(struct task_struct *p, int cpu)
+{
+	unsigned long capacity = capacity_orig_of(cpu);
+	unsigned long max_capacity = cpu_rq(cpu)->rd->max_cpu_capacity.val;
+
+	if (capacity == max_capacity)
+		return true;
+
+	return task_fits_capacity(p, capacity, cpu);
+}
+
+struct find_best_target_env {
+	int placement_boost;
+	int need_idle;
+	int fastpath;
+	int start_cpu;
+	int skip_cpu;
+	bool is_rtg;
+	bool boosted;
+	bool strict_max;
+};
 
 static inline int
 update_cfs_rq_load_avg(u64 now, struct cfs_rq *cfs_rq)
@@ -7355,6 +7462,7 @@ static bool is_packing_eligible(struct task_struct *p, int target_cpu,
 				unsigned int target_cpus_count,
 				int best_idle_cstate, bool boosted)
 {
+<<<<<<< HEAD
 	unsigned long tutil, estimated_capacity;
 
 	if (task_placement_boost_enabled(p) || fbt_env->need_idle || boosted)
@@ -7374,6 +7482,20 @@ static bool is_packing_eligible(struct task_struct *p, int target_cpu,
 	estimated_capacity = cpu_util_cum(target_cpu, tutil);
 	estimated_capacity = add_capacity_margin(estimated_capacity,
 						target_cpu);
+=======
+	struct root_domain *rd = cpu_rq(smp_processor_id())->rd;
+	int start_cpu = rd->min_cap_orig_cpu;
+	int task_boost = per_task_boost(p);
+#ifdef CONFIG_SCHED_TUNE
+	bool boosted = (schedtune_prefer_high_cap(p) &&
+				    p->prio <= DEFAULT_PRIO) ||
+#else
+	bool boosted = uclamp_boosted(p) ||
+#endif
+			task_boost_policy(p) == SCHED_BOOST_ON_BIG ||
+			task_boost == TASK_BOOST_ON_MID;
+	bool task_skip_min = task_skip_min_cpu(p);
+>>>>>>> f2735e95028b... sched/fair: schedule lower priority tasks from little cores
 
 	/*
 	 * If there is only one active CPU and it is already above its current
@@ -7797,8 +7919,15 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 		 * accommodated in the higher capacity CPUs.
 		 */
 		if ((prefer_idle && best_idle_cpu != -1) ||
+<<<<<<< HEAD
 		    (boosted && (best_idle_cpu != -1 || target_cpu != -1))) {
 			if (boosted) {
+=======
+		    (prefer_high_cap &&
+		     (best_idle_cpu != -1 || target_cpu != -1 ||
+		      (fbt_env->strict_max && most_spare_cap_cpu != -1)))) {
+			if (prefer_high_cap && p->prio <= DEFAULT_PRIO) {
+>>>>>>> f2735e95028b... sched/fair: schedule lower priority tasks from little cores
 				/*
 				 * For boosted task, stop searching when an idle
 				 * cpu is found in mid cluster.
