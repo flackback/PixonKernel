@@ -2979,6 +2979,9 @@ static void a6xx_platform_setup(struct adreno_device *adreno_dev)
 	} else
 		gpudev->vbif_xin_halt_ctrl0_mask =
 				A6XX_VBIF_XIN_HALT_CTRL0_MASK;
+				
+	if (ADRENO_FEATURE(adreno_dev, ADRENO_SPTP_PC))
+	    set_bit(ADRENO_SPTP_PC_CTRL, &adreno_dev->pwrctrl_flag);
 
 	if (ADRENO_FEATURE(adreno_dev, ADRENO_SPTP_PC))
 		set_bit(ADRENO_SPTP_PC_CTRL, &adreno_dev->pwrctrl_flag);
