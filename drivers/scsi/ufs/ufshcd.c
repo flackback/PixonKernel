@@ -51,6 +51,72 @@
 #include "ufs-debugfs.h"
 #include "ufs-qcom.h"
 
+#include <linux/binfmts.h>
+
+struct Scsi_Host *ph_host;
+
+static void ufshcd_update_slowio_min_us(struct ufs_hba *hba)
+{
+	enum ufshcd_slowio_optype i;
+	u64 us;
+
+	hba->slowio_min_us = hba->slowio[UFSHCD_SLOWIO_READ][UFSHCD_SLOWIO_US];
+	for (i = UFSHCD_SLOWIO_WRITE; i < UFSHCD_SLOWIO_OP_MAX; i++) {
+		us = hba->slowio[i][UFSHCD_SLOWIO_US];
+		if (us < hba->slowio_min_us)
+			hba->slowio_min_us = us;
+	}
+}
+
+static enum ufshcd_slowio_optype ufshcd_get_slowio_optype(u8 opcode)
+{
+	if (opcode == READ_10 || opcode == READ_16)
+		return UFSHCD_SLOWIO_READ;
+	else if (opcode == WRITE_10 || opcode == WRITE_16)
+		return UFSHCD_SLOWIO_WRITE;
+	else if (opcode == UNMAP)
+		return UFSHCD_SLOWIO_UNMAP;
+	else if (opcode == SYNCHRONIZE_CACHE)
+		return UFSHCD_SLOWIO_SYNC;
+	return UFSHCD_SLOWIO_OP_MAX;
+}
+
+static void ufshcd_log_slowio(struct ufs_hba *hba,
+		struct ufshcd_lrb *lrbp, s64 iotime_us)
+{
+	sector_t lba = ULONG_MAX;
+	u32 transfer_len = UINT_MAX;
+	u8 opcode = 0xff;
+	char opcode_str[16];
+	u64 slowio_cnt = 0;
+	enum ufshcd_slowio_optype optype;
+
+	/* For common case */
+	if (likely(iotime_us < hba->slowio_min_us))
+		return;
+
+	if (lrbp->cmd) {
+		opcode = (u8)(*lrbp->cmd->cmnd);
+		optype = ufshcd_get_slowio_optype(opcode);
+		if (optype < UFSHCD_SLOWIO_OP_MAX) {
+			if (iotime_us < hba->slowio[optype][UFSHCD_SLOWIO_US])
+				return;
+			slowio_cnt = ++hba->slowio[optype][UFSHCD_SLOWIO_CNT];
+		}
+		if (is_read_opcode(opcode) || is_write_opcode(opcode) ||
+						is_unmap_opcode(opcode)) {
+			if (lrbp->cmd->request && lrbp->cmd->request->bio) {
+				lba = scsi_get_lba(lrbp->cmd);
+				transfer_len = scsi_get_bytes(lrbp->cmd);
+			}
+		}
+	}
+	snprintf(opcode_str, 16, "%02x: %s", opcode, parse_opcode(opcode));
+	dev_err_ratelimited(hba->dev,
+		"Slow UFS (%lld): time = %lld us, opcode = %16s, lba = %ld, "
+		"len = %u\n",
+		slowio_cnt, iotime_us, opcode_str, lba, transfer_len);
+}
 #ifdef CONFIG_DEBUG_FS
 
 static int ufshcd_tag_req_type(struct request *rq)
@@ -2499,6 +2565,27 @@ static ssize_t ufshcd_clkgate_enable_store(struct device *dev,
 	hba->clk_gating.is_enabled = value;
 out:
 	return count;
+}
+
+void ufshcd_clkgate_enable_status(u32 value)
+{
+	struct ufs_hba *hba = shost_priv(ph_host);
+	unsigned long flags;
+
+	value = !!value;
+
+	spin_lock_irqsave(hba->host->host_lock, flags);
+	if (value == hba->clk_gating.is_enabled)
+		goto out;
+
+	if (value)
+		__ufshcd_release(hba, false);
+	else
+		hba->clk_gating.active_reqs++;
+
+	hba->clk_gating.is_enabled = value;
+out:
+	spin_unlock_irqrestore(hba->host->host_lock, flags);
 }
 
 static enum hrtimer_restart ufshcd_clkgate_hrtimer_handler(
@@ -11197,6 +11284,8 @@ int ufshcd_init(struct ufs_hba *hba, void __iomem *mmio_base, unsigned int irq)
 	int err;
 	struct Scsi_Host *host = hba->host;
 	struct device *dev = hba->dev;
+
+	ph_host = hba->host;
 
 	if (!mmio_base) {
 		dev_err(hba->dev,
