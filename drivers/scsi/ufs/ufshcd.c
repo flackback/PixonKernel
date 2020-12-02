@@ -51,9 +51,12 @@
 #include "ufs-debugfs.h"
 #include "ufs-qcom.h"
 
+#include <linux/touch_boost.h>
 #include <linux/binfmts.h>
 
+#ifdef CONFIG_TOUCH_BOOST_CLKGATE
 struct Scsi_Host *ph_host;
+#endif
 
 static void ufshcd_update_slowio_min_us(struct ufs_hba *hba)
 {
@@ -2567,6 +2570,7 @@ out:
 	return count;
 }
 
+#ifdef CONFIG_TOUCH_BOOST_CLKGATE
 void ufshcd_clkgate_enable_status(u32 value)
 {
 	struct ufs_hba *hba = shost_priv(ph_host);
@@ -2587,6 +2591,7 @@ void ufshcd_clkgate_enable_status(u32 value)
 out:
 	spin_unlock_irqrestore(hba->host->host_lock, flags);
 }
+#endif
 
 static enum hrtimer_restart ufshcd_clkgate_hrtimer_handler(
 					struct hrtimer *timer)
@@ -11285,7 +11290,10 @@ int ufshcd_init(struct ufs_hba *hba, void __iomem *mmio_base, unsigned int irq)
 	struct Scsi_Host *host = hba->host;
 	struct device *dev = hba->dev;
 
-	ph_host = hba->host;
+#ifdef CONFIG_TOUCH_BOOST_CLKGATE
+	if (touch_clkgate_boost)
+		ph_host = hba->host;
+#endif
 
 	if (!mmio_base) {
 		dev_err(hba->dev,
