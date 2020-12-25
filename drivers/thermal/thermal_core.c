@@ -1750,7 +1750,7 @@ cpu_limits_store(struct device *dev,
 static DEVICE_ATTR(cpu_limits, 0664,
 		   cpu_limits_show, cpu_limits_store);
 
-static int create_thermal_message_node(void)
+static noinline int create_thermal_message_node(void)
 {
 	int ret = 0;
 
