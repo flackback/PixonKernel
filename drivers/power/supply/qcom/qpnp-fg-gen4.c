@@ -1,4 +1,5 @@
 /* Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -27,6 +28,7 @@
 #include "fg-core.h"
 #include "fg-reg.h"
 #include "fg-alg.h"
+#include <linux/syscalls.h>
 
 #define FG_GEN4_DEV_NAME	"qcom,fg-gen4"
 #define TTF_AWAKE_VOTER		"fg_ttf_awake"
@@ -281,7 +283,7 @@ struct fg_gen4_chip {
 	struct votable		*parallel_current_en_votable;
 	struct votable		*mem_attn_irq_en_votable;
 	struct work_struct	esr_calib_work;
-        struct work_struct	vbat_sync_work;
+	struct work_struct	vbat_sync_work;
 	struct work_struct	soc_scale_work;
 	struct alarm		esr_fast_cal_timer;
 	struct alarm		soc_scale_alarm_timer;
@@ -334,7 +336,7 @@ struct bias_config {
 	int	bias_kohms;
 };
 
-static int fg_gen4_debug_mask = FG_STATUS | FG_IRQ;
+static int fg_gen4_debug_mask;
 module_param_named(
 	debug_mask, fg_gen4_debug_mask, int, 0600
 );
@@ -3642,6 +3644,7 @@ static bool fg_is_input_suspend(struct fg_dev *fg)
 		return false;
 }
 
+
 #define CENTI_FULL_SOC		10000
 static irqreturn_t fg_delta_msoc_irq_handler(int irq, void *data)
 {
@@ -3649,8 +3652,8 @@ static irqreturn_t fg_delta_msoc_irq_handler(int irq, void *data)
 	struct fg_gen4_chip *chip = container_of(fg, struct fg_gen4_chip, fg);
 	int rc, batt_soc, batt_temp, msoc_raw;
 	bool input_present = is_input_present(fg);
-	u32 batt_soc_cp;
 	bool input_suspend = false;
+	u32 batt_soc_cp;
 
 	rc = fg_get_msoc_raw(fg, &msoc_raw);
 	if (!rc)
@@ -4122,6 +4125,7 @@ static void pl_enable_work(struct work_struct *work)
 
 static void vbat_sync_work(struct work_struct *work)
 {
+	pr_err("sys_sync:vbat_sync_work\n");
 	sys_sync();
 }
 
@@ -4132,8 +4136,8 @@ static void status_change_work(struct work_struct *work)
 	struct fg_gen4_chip *chip = container_of(fg, struct fg_gen4_chip, fg);
 	int rc, batt_soc, batt_temp, msoc_raw;
 	bool input_present, qnovo_en;
-	u32 batt_soc_cp;
 	bool input_suspend = false;
+	u32 batt_soc_cp;
 
 	if (fg->battery_missing) {
 		pm_relax(fg->dev);
@@ -4851,7 +4855,6 @@ static int fg_parallel_current_en_cb(struct votable *votable, void *data,
 		return rc;
 
 	val = enable ? SMB_MEASURE_EN_BIT : 0;
-
 	mask = SMB_MEASURE_EN_BIT;
 	rc = fg_masked_write(fg, BATT_INFO_FG_CNV_CHAR_CFG(fg), mask, val);
 	if (rc < 0)
@@ -4860,8 +4863,6 @@ static int fg_parallel_current_en_cb(struct votable *votable, void *data,
 
 	vote(chip->mem_attn_irq_en_votable, MEM_ATTN_IRQ_VOTER, false, 0);
 	fg_dbg(fg, FG_STATUS, "Parallel current summing: %d\n", enable);
-
-	/*vote(chip->mem_attn_irq_en_votable, MEM_ATTN_IRQ_VOTER, false, 0);*/
 
 	return rc;
 }
@@ -6202,35 +6203,6 @@ static void fg_gen4_cleanup(struct fg_gen4_chip *chip)
 	dev_set_drvdata(fg->dev, NULL);
 }
 
-#define IBAT_OLD_WORD		317
-#define IBAT_OLD_OFFSET		0
-#define BATT_CURRENT_NUMR		488281
-#define BATT_CURRENT_DENR		1000
-int fg_get_batt_isense(struct fg_dev *fg, int *val)
-{
-	int rc;
-	u8 buf[2];
-	int64_t temp = 0;
-
-	rc = fg_sram_read(fg, IBAT_OLD_WORD, IBAT_OLD_OFFSET, buf, 2,
-			FG_IMA_DEFAULT);
-	if (rc < 0) {
-		pr_err("Error in reading %04x[%d] rc=%d\n", IBAT_OLD_WORD,
-				IBAT_OLD_OFFSET, rc);
-		return rc;
-	}
-
-	temp = buf[0] | buf[1] << 8;
-
-	/* Sign bit is bit 15 */
-	temp = sign_extend32(temp, 15);
-	*val = div_s64((s64)temp * BATT_CURRENT_NUMR, BATT_CURRENT_DENR);
-	pr_info("read batt isense: %d[%d]%d\n",
-			(*val)/10, *val, (*val)/1000);
-
-	return 0;
-}
-
 static void fg_gen4_post_init(struct fg_gen4_chip *chip)
 {
 	int i;
@@ -6299,7 +6271,7 @@ static int fg_gen4_probe(struct platform_device *pdev)
 	init_completion(&chip->mem_attn);
 	INIT_WORK(&fg->status_change_work, status_change_work);
 	INIT_WORK(&chip->esr_calib_work, esr_calib_work);
-        INIT_WORK(&chip->vbat_sync_work, vbat_sync_work);
+	INIT_WORK(&chip->vbat_sync_work, vbat_sync_work);
 	INIT_WORK(&chip->soc_scale_work, soc_scale_work);
 	INIT_DELAYED_WORK(&fg->profile_load_work, profile_load_work);
 	INIT_DELAYED_WORK(&fg->sram_dump_work, sram_dump_work);
@@ -6476,13 +6448,14 @@ static int fg_gen4_probe(struct platform_device *pdev)
 	if (!fg->battery_missing)
 		schedule_delayed_work(&fg->profile_load_work, 0);
 
+	fg_gen4_post_init(chip);
+
 	schedule_delayed_work(&fg->soc_work, 0);
 
 	if ((volt_uv >= VBAT_RESTART_FG_EMPTY_UV)
 			&& (msoc == 0) && (batt_temp >= TEMP_THR_RESTART_FG))
 		schedule_delayed_work(&fg->empty_restart_fg_work,
 				msecs_to_jiffies(RESTART_FG_START_WORK_MS));
-	fg_gen4_post_init(chip);
 
 	pr_debug("FG GEN4 driver probed successfully\n");
 	return 0;
@@ -6564,10 +6537,6 @@ static int fg_gen4_resume(struct device *dev)
 {
 	struct fg_gen4_chip *chip = dev_get_drvdata(dev);
 	struct fg_dev *fg = &chip->fg;
-	int val = 0;
-
-	if (!fg->input_present)
-		fg_get_batt_isense(fg, &val);
 
 	schedule_delayed_work(
 			&fg->soc_work, msecs_to_jiffies(SOC_WORK_MS));
@@ -6575,7 +6544,6 @@ static int fg_gen4_resume(struct device *dev)
 	if (fg_sram_dump)
 		schedule_delayed_work(&fg->sram_dump_work,
 				msecs_to_jiffies(fg_sram_dump_period_ms));
-
 	return 0;
 }
 
