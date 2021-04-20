@@ -201,7 +201,10 @@ static int msm_thermal_simple_parse_dt(struct platform_device *pdev,
 		if (ret)
 			goto free_zones;
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> f6250a3c23a7... msm_thermal_simple: update for prime affining
 		ret = OF_READ_U32(child, "qcom,trip-deg", zone->trip_deg);
 		if (ret)
 			goto free_zones;
