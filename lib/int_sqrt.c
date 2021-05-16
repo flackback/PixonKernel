@@ -46,3 +46,30 @@ inline unsigned long int_sqrt(unsigned long x)
 	return root;
 }
 EXPORT_SYMBOL(int_sqrt);
+
+#if BITS_PER_LONG < 64
+/**
+ * int_sqrt64 - strongly typed int_sqrt function when minimum 64 bit input
+ * is expected.
+ * @x: 64bit integer of which to calculate the sqrt
+ */
+u32 int_sqrt64(u64 x)
+{
+	u64 b, m, y = 0;
+>>>>>>> d038246a77dd... int_sqrt: Improve 3x faster integer sqrt.
+
+	do {
+		tmp = root + place;
+		root >>= 1;
+
+		if (x >= tmp)
+		{
+			x -= tmp;
+			root += place;
+		}
+		place >>= 2;
+	}while (place != 0);
+
+	return root;
+}
+EXPORT_SYMBOL(int_sqrt);
