@@ -559,7 +559,8 @@
 
 	chosen {
 
-		bootargs = "rcupdate.rcu_normal_after_boot=1 rcu_nocbs=0-7 cgroup.memory=nokmem,nosocket, nowatchdog nosoftlockup=0 quiet audit=0 noirqdebug mce=ignore_ce,nosocket kpti=off"";
+		bootargs = "rcupdate.rcu_normal_after_boot=1 rcu_nocbs=0-7 cgroup.memory=nokmem,nosocket, nowatchdog nosoftlockup=0 quiet audit=0 noirqdebug nodebugmon mce=ignore_ce,nosocket kpti=off"";
+
 
 	};
 
