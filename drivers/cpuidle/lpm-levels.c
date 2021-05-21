@@ -60,6 +60,7 @@
 #define PSCI_AFFINITY_LEVEL(lvl) ((lvl & 0x3) << 24)
 #define BIAS_HYST (bias_hyst * NSEC_PER_MSEC)
 
+
 enum {
 	MSM_LPM_LVL_DBG_SUSPEND_LIMITS = BIT(0),
 	MSM_LPM_LVL_DBG_IDLE_LIMITS = BIT(1),
@@ -83,6 +84,8 @@ struct lpm_debug {
 	uint32_t arg3;
 	uint32_t arg4;
 };
+
+#define MAX_S2IDLE_CPU_ATTEMPTS  48   /* divide by # cpus for max suspends */
 
 static struct system_pm_ops *sys_pm_ops;
 
