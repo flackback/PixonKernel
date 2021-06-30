@@ -758,8 +758,8 @@ static void *m_next_pid(struct seq_file *m, void *v, loff_t *pos)
 }
 
 static const struct seq_operations proc_pid_maps_op = {
-	.start	= m_start_pid,
-	.next	= m_next_pid,
+	.start	= m_start,
+	.next	= m_next,
 	.stop	= m_stop,
 	.show	= show_pid_map
 };
