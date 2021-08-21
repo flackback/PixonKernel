@@ -1902,6 +1902,23 @@ const char *cmd_set_prop_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-doze-lbm-command",
 	"qcom,mdss-dsi-dispparam-hbm-fod-on-command",
 	"qcom,mdss-dsi-dispparam-hbm-fod-off-command",
+	"qcom,mdss-dsi-dispparam-crc-dcip3-on-command",
+	"qcom,mdss-dsi-dispparam-crc-off-command",
+	"qcom,mdss-dsi-dispparam-elvss-dimming-off-command",
+	"mi,mdss-dsi-read-lockdown-info-command",
+	"qcom,mdss-dsi-dispparam-cabcuion-command",
+	"qcom,mdss-dsi-dispparam-cabcmovieon-command",
+	"qcom,mdss-dsi-dispparam-cabcstillon-command",
+	"qcom,mdss-dsi-dispparam-cabcoff-command",
+	"qcom,mdss-dsi-dispparam-lcd-hbm-l1-on-command",
+	"qcom,mdss-dsi-dispparam-lcd-hbm-l2-on-command",
+	"qcom,mdss-dsi-dispparam-lcd-hbm-off-command",
+	"qcom,mdss-dsi-dispparam-hbm-on-command",
+	"qcom,mdss-dsi-dispparam-hbm-off-command",
+	"qcom,mdss-dsi-hbm1-on-command",
+	"qcom,mdss-dsi-hbm2-on-command",
+	"qcom,mdss-dsi-dispparam-dimmingon-command",
+	"qcom,mdss-dsi-dispparam-dimmingoff-command"
 };
 
 const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
@@ -1932,6 +1949,23 @@ const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-doze-lbm-command-state",
 	"qcom,mdss-dsi-dispparam-hbm-fod-on-command-state",
 	"qcom,mdss-dsi-dispparam-hbm-fod-off-command-state",
+	"qcom,mdss-dsi-dispparam-crc-dcip3-on-command-state",
+	"qcom,mdss-dsi-dispparam-crc-off-command-state",
+	"qcom,mdss-dsi-dispparam-elvss-dimming-off-command-state",
+	"mi,mdss-dsi-read-lockdown-info-command-state",
+	"qcom,mdss-dsi-dispparam-cabcuion-command-state",
+	"qcom,mdss-dsi-dispparam-cabcstillon-command-state",
+	"qcom,mdss-dsi-dispparam-cabcmovieon-command-state",
+	"qcom,mdss-dsi-dispparam-cabcoff-command-state",
+	"qcom,mdss-dsi-dispparam-lcd-hbm-l1-on-command-state",
+	"qcom,mdss-dsi-dispparam-lcd-hbm-l2-on-command-state",
+	"qcom,mdss-dsi-dispparam-lcd-hbm-off-command-state",
+	"qcom,mdss-dsi-dispparam-hbm-on-command-state",
+	"qcom,mdss-dsi-hbm1-on-command-state",
+	"qcom,mdss-dsi-hbm2-on-command-state",
+	"qcom,mdss-dsi-dispparam-hbm-off-command-state",
+	"qcom,mdss-dsi-dispparam-dimmingon-command-state",
+	"qcom,mdss-dsi-dispparam-dimmingoff-command-state"
 };
 
 static int dsi_panel_get_cmd_pkt_count(const char *data, u32 length, u32 *cnt)
@@ -4752,4 +4786,54 @@ int dsi_panel_apply_hbm_mode(struct dsi_panel *panel)
 	mutex_unlock(&panel->panel_lock);
 
 	return rc;
+}
+
+int dsi_panel_apply_cabc_mode(struct dsi_panel *panel)
+{
+	static const enum dsi_cmd_set_type type_map[] = {
+		DSI_CMD_SET_DISP_CABC_OFF,
+		DSI_CMD_SET_DISP_CABC_UI_ON,
+		DSI_CMD_SET_DISP_CABC_STILL_ON,
+		DSI_CMD_SET_DISP_CABC_MOVIE_ON
+	};
+
+	enum dsi_cmd_set_type type;
+	int rc;
+
+	if (panel->cabc_mode >= 0 &&
+		panel->cabc_mode < ARRAY_SIZE(type_map))
+		type = type_map[panel->cabc_mode];
+	else
+		type = type_map[0];
+
+	mutex_lock(&panel->panel_lock);
+	rc = dsi_panel_tx_cmd_set(panel, type);
+	mutex_unlock(&panel->panel_lock);
+
+	return rc;
+}
+int dsi_panel_set_feature(struct dsi_panel *panel, enum dsi_cmd_set_type type)
+{
+		int rc = 0;
+
+		if (!panel || type < 0 || type >= DSI_CMD_SET_MAX) {
+			pr_err("Invalid params\n");
+			return -EINVAL;
+		}
+
+		pr_info("xinj:%s panel_initialized=%d type=%d\n", __func__, panel->panel_initialized, type);
+		if (!panel->panel_initialized) {
+			pr_err("xinj: can't set cmds type=%d\n", type);
+			return -EINVAL;
+		}
+
+		mutex_lock(&panel->panel_lock);
+
+		rc = dsi_panel_tx_cmd_set(panel, type);
+		if (rc) {
+			pr_err("[%s] failed to send DSI_CMD_SET_FEATURE_ON/OFF cmds, rc=%d,type=%d\n",
+					panel->name, rc, type);
+		}
+		mutex_unlock(&panel->panel_lock);
+		return rc;
 }

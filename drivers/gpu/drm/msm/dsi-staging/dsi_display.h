@@ -720,4 +720,5 @@ void dsi_display_set_fod_ui(struct dsi_display *display, bool status);
 
 struct dsi_display *get_main_display(void);
 
+int dsi_panel_set_feature(struct dsi_panel *panel, enum dsi_cmd_set_type type);
 #endif /* _DSI_DISPLAY_H_ */
