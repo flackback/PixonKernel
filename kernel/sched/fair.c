@@ -125,8 +125,8 @@ enum sched_tunable_scaling sysctl_sched_tunable_scaling = SCHED_TUNABLESCALING_L
  * (default: 0.75 msec * (1 + ilog(ncpus)), units: nanoseconds)
  */
 #ifdef CONFIG_ZEN_INTERACTIVE
-unsigned int sysctl_sched_min_granularity			= 400000ULL;
-static unsigned int normalized_sysctl_sched_min_granularity	= 400000ULL;
+unsigned int sysctl_sched_min_granularity			= 500000ULL;
+static unsigned int normalized_sysctl_sched_min_granularity	= 500000ULL;
 #else
 unsigned int sysctl_sched_min_granularity		= 750000ULL;
 unsigned int normalized_sysctl_sched_min_granularity	= 750000ULL;
@@ -162,10 +162,10 @@ unsigned int __read_mostly sysctl_sched_energy_aware = 1;
  * (default: 1 msec * (1 + ilog(ncpus)), units: nanoseconds)
  */
 #ifdef CONFIG_ZEN_INTERACTIVE
-unsigned int sysctl_sched_wakeup_granularity			= 500000UL;
-static unsigned int normalized_sysctl_sched_wakeup_granularity	= 500000UL;
+unsigned int sysctl_sched_wakeup_granularity			= 2000000UL;
+static unsigned int normalized_sysctl_sched_wakeup_granularity	= 2000000UL;
 
-const_debug unsigned int sysctl_sched_migration_cost	= 250000UL;
+const_debug unsigned int sysctl_sched_migration_cost	= 5000000UL;
 #else
 unsigned int sysctl_sched_wakeup_granularity		= 1000000UL;
 unsigned int normalized_sysctl_sched_wakeup_granularity	= 1000000UL;
