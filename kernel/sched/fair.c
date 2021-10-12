@@ -7462,7 +7462,7 @@ static bool is_packing_eligible(struct task_struct *p, int target_cpu,
 				unsigned int target_cpus_count,
 				int best_idle_cstate, bool boosted)
 {
-<<<<<<< HEAD
+
 	unsigned long tutil, estimated_capacity;
 
 	if (task_placement_boost_enabled(p) || fbt_env->need_idle || boosted)
@@ -7482,7 +7482,6 @@ static bool is_packing_eligible(struct task_struct *p, int target_cpu,
 	estimated_capacity = cpu_util_cum(target_cpu, tutil);
 	estimated_capacity = add_capacity_margin(estimated_capacity,
 						target_cpu);
-=======
 	struct root_domain *rd = cpu_rq(smp_processor_id())->rd;
 	int start_cpu = rd->min_cap_orig_cpu;
 	int task_boost = per_task_boost(p);
@@ -7495,7 +7494,6 @@ static bool is_packing_eligible(struct task_struct *p, int target_cpu,
 			task_boost_policy(p) == SCHED_BOOST_ON_BIG ||
 			task_boost == TASK_BOOST_ON_MID;
 	bool task_skip_min = task_skip_min_cpu(p);
->>>>>>> f2735e95028b... sched/fair: schedule lower priority tasks from little cores
 
 	/*
 	 * If there is only one active CPU and it is already above its current
@@ -7919,15 +7917,12 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 		 * accommodated in the higher capacity CPUs.
 		 */
 		if ((prefer_idle && best_idle_cpu != -1) ||
-<<<<<<< HEAD
 		    (boosted && (best_idle_cpu != -1 || target_cpu != -1))) {
 			if (boosted) {
-=======
 		    (prefer_high_cap &&
 		     (best_idle_cpu != -1 || target_cpu != -1 ||
 		      (fbt_env->strict_max && most_spare_cap_cpu != -1)))) {
 			if (prefer_high_cap && p->prio <= DEFAULT_PRIO) {
->>>>>>> f2735e95028b... sched/fair: schedule lower priority tasks from little cores
 				/*
 				 * For boosted task, stop searching when an idle
 				 * cpu is found in mid cluster.
