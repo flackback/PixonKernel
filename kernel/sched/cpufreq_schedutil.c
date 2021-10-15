@@ -883,7 +883,7 @@ static ssize_t iowait_boost_enable_show(struct gov_attr_set *attr_set,
 {
 	struct sugov_tunables *tunables = to_sugov_tunables(attr_set);
 	return snprintf(buf, PAGE_SIZE, "%u\n",
-			tunables->iowait_boost_enable);
+			
 }
 
 static ssize_t iowait_boost_enable_store(struct gov_attr_set *attr_set,
@@ -898,7 +898,6 @@ static ssize_t iowait_boost_enable_store(struct gov_attr_set *attr_set,
 	if (kstrtobool(buf, &enable))
 		return -EINVAL;
 
-	tunables->iowait_boost_enable = enable;
 	return count;
 }
 static struct governor_attr up_rate_limit_us = __ATTR_RW(up_rate_limit_us);
