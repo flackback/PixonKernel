@@ -882,7 +882,7 @@ static ssize_t iowait_boost_enable_show(struct gov_attr_set *attr_set,
 					char *buf)
 {
 	struct sugov_tunables *tunables = to_sugov_tunables(attr_set);
-	return snprintf(buf, PAGE_SIZE, "%u\n",
+	return snprintf(buf, PAGE_SIZE, "%u\n");
 			
 }
 
