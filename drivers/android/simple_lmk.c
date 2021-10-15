@@ -47,8 +47,9 @@ static struct victim_info victims[MAX_VICTIMS];
 static DECLARE_WAIT_QUEUE_HEAD(oom_waitq);
 static DECLARE_COMPLETION(reclaim_done);
 static DEFINE_RWLOCK(mm_free_lock);
-static atomic_t victims_to_kill = ATOMIC_INIT(0);
+static int victims_to_kill;
 static atomic_t needs_reclaim = ATOMIC_INIT(0);
+static atomic_t nr_killed = ATOMIC_INIT(0);
 
 static int victim_size_cmp(const void *lhs_ptr, const void *rhs_ptr)
 {
