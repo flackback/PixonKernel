@@ -251,8 +251,6 @@ struct qpnp_pon {
 	spinlock_t		fs_sync_lock;
 	struct notifier_block	pon_nb;
 	bool			legacy_hard_reset_offset;
-	struct delayed_work	fsync_timer;
-	spinlock_t		fs_sync_lock;
 };
 
 static int pon_ship_mode_en;
