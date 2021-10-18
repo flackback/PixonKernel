@@ -6583,7 +6583,7 @@ void ufshcd_abort_outstanding_transfer_requests(struct ufs_hba *hba, int result)
 			/* Mark completed command as NULL in LRB */
 			lrbp->cmd = NULL;
 			ufshcd_release_all(hba);
-<<<<<<< HEAD
+
 			if (cmd->request) {
 				/*
 				 * As we are accessing the "request" structure,
@@ -6593,10 +6593,9 @@ void ufshcd_abort_outstanding_transfer_requests(struct ufs_hba *hba, int result)
 				ufshcd_vops_pm_qos_req_end(hba, cmd->request,
 					true);
 			}
-=======
+
 			if (cmd->request)
 				ufshcd_pm_qos_put(hba);
->>>>>>> 83a77d58b734f... scsi: ufs: Add simple IRQ-affined PM QoS operations
 			/* Do not touch lrbp after scsi done */
 			cmd->scsi_done(cmd);
 		} else if (lrbp->command_type == UTP_CMD_TYPE_DEV_MANAGE) {
