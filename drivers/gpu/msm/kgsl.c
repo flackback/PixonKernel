@@ -4940,53 +4940,6 @@ static int _register_device(struct kgsl_device *device)
 	return 0;
 }
 
-int kgsl_request_irq(struct platform_device *pdev, const  char *name,
-		irq_handler_t handler, void *data)
-{
-	int ret, num = platform_get_irq_byname(pdev, name);
-	unsigned long irqflags = IRQF_TRIGGER_HIGH;
-
-	if (num < 0)
-		return num;
-
-	if (!strcmp(name, "kgsl_3d0_irq"))
-		irqflags |= IRQF_PERF_AFFINE;
-
-	ret = devm_request_irq(&pdev->dev, num, handler, irqflags, name, data);
-
-	if (ret)
-		dev_err(&pdev->dev, "Unable to get interrupt %s: %d\n",
-			name, ret);
-
-	return ret ? ret : num;
-}
-
-int kgsl_of_property_read_ddrtype(struct device_node *node, const char *base,
-		u32 *ptr)
-{
-	char str[32];
-	int ddr = of_fdt_get_ddrtype();
-
-	/* of_fdt_get_ddrtype returns error if the DDR type isn't determined */
-	if (ddr >= 0) {
-		int ret;
-
-		/* Construct expanded string for the DDR type  */
-		ret = snprintf(str, sizeof(str), "%s-ddr%d", base, ddr);
-
-		/* WARN_ON() if the array size was too small for the string */
-		if (WARN_ON(ret > sizeof(str)))
-			return -ENOMEM;
-
-		/* Read the expanded string */
-		if (!of_property_read_u32(node, str, ptr))
-			return 0;
-	}
-
-	/* Read the default string */
-	return of_property_read_u32(node, base, ptr);
-}
-
 int kgsl_device_platform_probe(struct kgsl_device *device)
 {
 	int status = -EINVAL;
@@ -5273,8 +5226,8 @@ static int __init kgsl_core_init(void)
 
 	kthread_init_worker(&kgsl_driver.worker);
 
-	kgsl_driver.worker_thread = kthread_run_perf_critical(cpu_perf_mask,
-		kthread_worker_fn, &kgsl_driver.worker, "kgsl_worker_thread");
+	kgsl_driver.worker_thread = kthread_run(kthread_worker_fn,
+		&kgsl_driver.worker, "kgsl_worker_thread");
 
 	if (IS_ERR(kgsl_driver.worker_thread)) {
 		pr_err("unable to start kgsl thread\n");
