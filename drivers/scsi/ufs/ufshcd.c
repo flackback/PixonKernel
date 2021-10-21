@@ -2502,7 +2502,6 @@ out:
 	return count;
 }
 
-
 static enum hrtimer_restart ufshcd_clkgate_hrtimer_handler(
 					struct hrtimer *timer)
 {
@@ -11199,6 +11198,7 @@ int ufshcd_init(struct ufs_hba *hba, void __iomem *mmio_base, unsigned int irq)
 	int err;
 	struct Scsi_Host *host = hba->host;
 	struct device *dev = hba->dev;
+
 
 ph_host = hba->host;
 
