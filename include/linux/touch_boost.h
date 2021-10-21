@@ -31,6 +31,4 @@ struct boost_drv {
 extern bool touch_clkgate_boost __read_mostly;
 extern bool touch_lpm_boost __read_mostly;
 
-void ufshcd_clkgate_enable_status(u32 value);
-
 #endif /* _TOUCH_BOOST_H_ */
