@@ -2502,32 +2502,7 @@ out:
 	return count;
 }
 
-<<<<<<< HEAD
-#ifdef CONFIG_TOUCH_BOOST_CLKGATE
-void ufshcd_clkgate_enable_status(u32 value)
-{
-	struct ufs_hba *hba = shost_priv(ph_host);
-	unsigned long flags;
 
-	value = !!value;
-
-	spin_lock_irqsave(hba->host->host_lock, flags);
-	if (value == hba->clk_gating.is_enabled)
-		goto out;
-
-	if (value)
-		__ufshcd_release(hba, false);
-	else
-		hba->clk_gating.active_reqs++;
-
-	hba->clk_gating.is_enabled = value;
-out:
-	spin_unlock_irqrestore(hba->host->host_lock, flags);
-}
-#endif
-
-=======
->>>>>>> parent of 33abd69d95d66... scsi: ufs: Add support for control UFS gating dynamically
 static enum hrtimer_restart ufshcd_clkgate_hrtimer_handler(
 					struct hrtimer *timer)
 {
@@ -11225,14 +11200,8 @@ int ufshcd_init(struct ufs_hba *hba, void __iomem *mmio_base, unsigned int irq)
 	struct Scsi_Host *host = hba->host;
 	struct device *dev = hba->dev;
 
-<<<<<<< HEAD
-#ifdef CONFIG_TOUCH_BOOST_CLKGATE
-	if (touch_clkgate_boost)
-		ph_host = hba->host;
-#endif
+ph_host = hba->host;
 
-=======
->>>>>>> parent of 33abd69d95d66... scsi: ufs: Add support for control UFS gating dynamically
 	if (!mmio_base) {
 		dev_err(hba->dev,
 		"Invalid memory reference for mmio_base is NULL\n");
