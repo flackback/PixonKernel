@@ -25,10 +25,6 @@
 #define RESTRAINED_BOOST_DISABLE -3
 #endif
 
-#ifdef CONFIG_DYNAMIC_STUNE_BOOST
-static int boost_slot;
-#endif // CONFIG_DYNAMIC_STUNE_BOOST
-
 /*
  * Scheduler boost is a mechanism to temporarily place tasks on CPUs
  * with higher capacity than those where a task would have normally
@@ -243,14 +239,6 @@ static void sched_boost_disable_all(void)
 
 static void _sched_set_boost(int type)
 {
-
-#ifdef CONFIG_DYNAMIC_STUNE_BOOST
-	if (type > 0)
-		do_stune_sched_boost("top-app", &boost_slot);
-	else
-		reset_stune_boost("top-app", boost_slot);
-#endif // CONFIG_DYNAMIC_STUNE_BOOST
-
 	if (type == 0)
 		sched_boost_disable_all();
 	else if (type > 0)
