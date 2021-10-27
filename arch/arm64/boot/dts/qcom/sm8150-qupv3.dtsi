@@ -6,6 +6,9 @@
  * GNU General Public License for more details.
  */
 
+#include <dt-bindings/msm/msm-bus-ids.h>
+
+
 &soc {
 	/* QUPv3 South Instances */
 	qupv3_0: qcom,qupv3_0_geni_se@8c0000 {
