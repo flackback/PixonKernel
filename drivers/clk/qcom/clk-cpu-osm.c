@@ -23,7 +23,6 @@
 #include <linux/errno.h>
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
-#include <linux/energy_model.h>
 #include <linux/cpu.h>
 #include <linux/platform_device.h>
 #include <linux/of_platform.h>
@@ -637,13 +636,10 @@ static unsigned int osm_cpufreq_get(unsigned int cpu)
 static int osm_cpufreq_cpu_init(struct cpufreq_policy *policy)
 {
 	struct cpufreq_frequency_table *table;
-	struct em_data_callback em_cb = EM_DATA_CB(of_dev_pm_opp_get_cpu_power);
 	struct clk_osm *c, *parent;
 	struct clk_hw *p_hw;
+	int ret;
 	unsigned int i;
-	int ret, nr_opp;
-	unsigned int i, prev_cc = 0;
-	unsigned int xo_kHz;
 
 	c = osm_configure_policy(policy);
 	if (!c) {
@@ -702,7 +698,6 @@ static int osm_cpufreq_cpu_init(struct cpufreq_policy *policy)
 		pr_err("%s: invalid frequency table: %d\n", __func__, ret);
 		goto err;
 	}
-	nr_opp = ret;
 
 	policy->dvfs_possible_from_any_cpu = true;
 	policy->fast_switch_possible = true;
@@ -710,7 +705,6 @@ static int osm_cpufreq_cpu_init(struct cpufreq_policy *policy)
 
 	cpumask_copy(policy->cpus, &c->related_cpus);
 
-	em_register_perf_domain(policy->cpus, nr_opp, &em_cb);
 	return 0;
 
 err:
