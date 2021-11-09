@@ -9561,7 +9561,7 @@ next:
 		list_move_tail(&p->se.group_node, tasks);
 
 #endif
-
+}
 
 	if (env->flags & (LBF_IGNORE_BIG_TASKS |
 			LBF_IGNORE_PREFERRED_CLUSTER_TASKS) && !detached) {
