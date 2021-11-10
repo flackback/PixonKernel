@@ -493,14 +493,9 @@ struct cfs_bandwidth { };
 
 /* CFS-related fields in a runqueue */
 struct cfs_rq {
-	struct load_weight load;
 	unsigned int nr_running, h_nr_running, idle_h_nr_running;
 	struct load_weight	load;
 	unsigned long		runnable_weight;
-	unsigned int		nr_running;
-	unsigned int		h_nr_running;
-	/* h_nr_running for SCHED_IDLE tasks */
-	unsigned int		idle_h_nr_running;
 
 	u64 exec_clock;
 	u64 min_vruntime;
