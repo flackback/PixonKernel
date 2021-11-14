@@ -9,9 +9,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
- */
+
 #include <linux/module.h>
 #include <linux/suspend.h>
 #include <linux/platform_device.h>
