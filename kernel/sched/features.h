@@ -5,7 +5,7 @@
  * rip the spread apart.
  */
 
-#define SCHED_FEAT_GENTLE_FAIR_SLEEPERS 1
+#define SCHED_FEAT_GENTLE_FAIR_SLEEPERS 0
 
 /*
  * Place new tasks ahead so that they do not starve already running
