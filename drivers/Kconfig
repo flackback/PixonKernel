@@ -229,8 +229,6 @@ source "drivers/halls/Kconfig"
 
 source "techpack/data/drivers/Kconfig"
 
-source "drivers/trusty/Kconfig"
-
 source "drivers/dts_eagle/Kconfig"
 
 endmenu
