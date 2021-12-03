@@ -427,8 +427,6 @@ static void sugov_get_util(unsigned long *util, unsigned long *max, int cpu,
 static void sugov_set_iowait_boost(struct sugov_cpu *sg_cpu, u64 time,
 				   unsigned int flags)
 {
-
-return;
 	if (flags & SCHED_CPUFREQ_IOWAIT) {
 		sg_cpu->iowait_boost = sg_cpu->iowait_boost_max;
 	} else if (sg_cpu->iowait_boost) {
@@ -443,7 +441,6 @@ return;
 static void sugov_iowait_boost(struct sugov_cpu *sg_cpu, unsigned long *util,
 			       unsigned long *max)
 {
-
 	unsigned long boost_util = sg_cpu->iowait_boost;
 	unsigned long boost_max = sg_cpu->iowait_boost_max;
 
