@@ -4,7 +4,7 @@
  * them to run sooner, but does not allow tons of sleepers to
  * rip the spread apart.
  */
-SCHED_FEAT(GENTLE_FAIR_SLEEPERS, true)
+SCHED_FEAT(GENTLE_FAIR_SLEEPERS, false)
 
 /*
  * Place new tasks ahead so that they do not starve already running
@@ -121,9 +121,9 @@ SCHED_FEAT(ENERGY_AWARE, false)
  *   ON: If the target CPU saves any energy, use that.
  *   OFF: Use whichever of target or backup saves most.
  */
-SCHED_FEAT(EAS_PREFER_IDLE, false)
+SCHED_FEAT(EAS_PREFER_IDLE, true)
 SCHED_FEAT(FIND_BEST_TARGET, true)
-SCHED_FEAT(FBT_STRICT_ORDER, false)
+SCHED_FEAT(FBT_STRICT_ORDER, true)
 
 /*
  * Apply schedtune boost hold to tasks of all sched classes.
@@ -134,7 +134,7 @@ SCHED_FEAT(FBT_STRICT_ORDER, false)
  * If disabled, this behaviour will only apply to tasks of the
  * RT class.
  */
-SCHED_FEAT(SCHEDTUNE_BOOST_HOLD_ALL, false)
+SCHED_FEAT(SCHEDTUNE_BOOST_HOLD_ALL, true)
 
 /*
  * Inflate the effective utilization of SchedTune-boosted tasks, which
