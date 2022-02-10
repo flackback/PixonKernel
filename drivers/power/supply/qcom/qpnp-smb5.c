@@ -1153,6 +1153,7 @@ static int smb5_usb_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_CURRENT_MAX:
 		rc = smblib_get_prop_input_current_max(chg, val);
+		val->intval = get_effective_result(chg->usb_icl_votable);
 		break;
 	case POWER_SUPPLY_PROP_TYPE:
 		val->intval = POWER_SUPPLY_TYPE_USB_PD;
