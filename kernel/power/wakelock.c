@@ -48,7 +48,7 @@ ssize_t pm_show_wakelocks(char *buf, bool show_active)
 		wl = rb_entry(node, struct wakelock, node);
 
 		if (wl->ws->active == show_active)
-			ccc
+			str += scnprintf(str, end - str, "%s ", wl->name);
 	}
 	if (str > buf)
 		str--;
