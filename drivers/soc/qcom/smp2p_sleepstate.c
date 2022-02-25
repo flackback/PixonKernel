@@ -8,9 +8,6 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-// SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
  */
 #include <linux/module.h>
 #include <linux/suspend.h>
@@ -26,7 +23,7 @@
 #define PROC_AWAKE_ID 12 /* 12th bit */
 #define AWAKE_BIT BIT(PROC_AWAKE_ID)
 static struct qcom_smem_state *state;
-static struct wakeup_source *notify_ws;
+struct wakeup_source notify_ws;
 
 /**
  * sleepstate_pm_notifier() - PM notifier callback function.
@@ -61,14 +58,14 @@ static struct notifier_block sleepstate_pm_nb = {
 
 static irqreturn_t smp2p_sleepstate_handler(int irq, void *ctxt)
 {
-	__pm_wakeup_event(notify_ws, 200);
+	__pm_wakeup_event(&notify_ws, 200);
 	return IRQ_HANDLED;
 }
 
 static int smp2p_sleepstate_probe(struct platform_device *pdev)
 {
 	int ret;
-	int irq;
+	int irq = -1;
 	struct device *dev = &pdev->dev;
 	struct device_node *node = dev->of_node;
 
@@ -78,37 +75,31 @@ static int smp2p_sleepstate_probe(struct platform_device *pdev)
 	qcom_smem_state_update_bits(state, AWAKE_BIT, AWAKE_BIT);
 
 	ret = register_pm_notifier(&sleepstate_pm_nb);
-	if (ret) {
-		dev_err(dev, "%s: power state notif error %d\n", __func__, ret);
-		return ret;
-	}
+	if (ret)
+		dev_err(&pdev->dev, "%s: power state notif error %d\n",
+							__func__, ret);
 
-	notify_ws = wakeup_source_register(&pdev->dev, "smp2p-sleepstate");
-	if (!notify_ws) {
-		return -ENOMEM;
-		goto err_ws;
-	}
+	wakeup_source_init(&notify_ws, "smp2p-sleepstate");
 
 	irq = of_irq_get_byname(node, "smp2p-sleepstate-in");
 	if (irq <= 0) {
-		dev_err(dev, "failed to get irq for smp2p_sleep_state\n");
+		dev_err(&pdev->dev,
+			"failed for irq getbyname for smp2p_sleep_state\n");
 		ret = -EPROBE_DEFER;
 		goto err;
 	}
-	dev_dbg(dev, "got smp2p-sleepstate-in irq %d\n", irq);
+	dev_info(&pdev->dev, "got smp2p-sleepstate-in irq %d\n", irq);
 	ret = devm_request_threaded_irq(dev, irq, NULL,
-					smp2p_sleepstate_handler,
-					IRQF_ONESHOT | IRQF_TRIGGER_RISING,
-					"smp2p_sleepstate", dev);
+		(irq_handler_t)smp2p_sleepstate_handler,
+		IRQF_TRIGGER_RISING, "smp2p_sleepstate", dev);
 	if (ret) {
-		dev_err(dev, "fail to register smp2p threaded_irq=%d\n", irq);
+		dev_err(&pdev->dev, "fail to register smp2p threaded_irq=%d\n",
+									irq);
 		goto err;
 	}
 	return 0;
 err:
-	wakeup_source_unregister(notify_ws);
-	__pm_relax(notify_ws);
-err_ws:
+	wakeup_source_trash(&notify_ws);
 	unregister_pm_notifier(&sleepstate_pm_nb);
 	return ret;
 }
@@ -122,6 +113,7 @@ static struct platform_driver smp2p_sleepstate_driver = {
 	.probe = smp2p_sleepstate_probe,
 	.driver = {
 		.name = "smp2p_sleepstate",
+		.owner = THIS_MODULE,
 		.of_match_table = smp2p_slst_match_table,
 	},
 };
