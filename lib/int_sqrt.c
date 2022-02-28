@@ -56,7 +56,6 @@ EXPORT_SYMBOL(int_sqrt);
 u32 int_sqrt64(u64 x)
 {
 	u64 b, m, y = 0;
->>>>>>> d038246a77dd... int_sqrt: Improve 3x faster integer sqrt.
 
 	do {
 		tmp = root + place;
@@ -73,3 +72,4 @@ u32 int_sqrt64(u64 x)
 	return root;
 }
 EXPORT_SYMBOL(int_sqrt);
+#endif
