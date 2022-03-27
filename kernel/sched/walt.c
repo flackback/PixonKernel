@@ -2055,7 +2055,6 @@ void reset_task_stats(struct task_struct *p)
 
 		memset(&p->ravg, 0, sizeof(struct ravg));
 
-
 		/* Retain EXITING_TASK marker */
 		p->ravg.sum_history[0] = sum;
 	} else {
