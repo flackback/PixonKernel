@@ -4,7 +4,7 @@
  * them to run sooner, but does not allow tons of sleepers to
  * rip the spread apart.
  */
-SCHED_FEAT(GENTLE_FAIR_SLEEPERS, false)
+SCHED_FEAT(GENTLE_FAIR_SLEEPERS, true)
 
 /*
  * Place new tasks ahead so that they do not starve already running
@@ -123,7 +123,7 @@ SCHED_FEAT(ENERGY_AWARE, false)
  */
 SCHED_FEAT(EAS_PREFER_IDLE, true)
 SCHED_FEAT(FIND_BEST_TARGET, true)
-SCHED_FEAT(FBT_STRICT_ORDER, true)
+SCHED_FEAT(FBT_STRICT_ORDER, false)
 
 /*
  * Apply schedtune boost hold to tasks of all sched classes.
