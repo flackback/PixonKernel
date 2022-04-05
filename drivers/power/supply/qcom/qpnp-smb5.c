@@ -2222,7 +2222,6 @@ static enum power_supply_property smb5_batt_props[] = {
 	POWER_SUPPLY_PROP_TIME_TO_FULL_NOW,
 	POWER_SUPPLY_PROP_FCC_STEPPER_ENABLE,
 	POWER_SUPPLY_PROP_DC_THERMAL_LEVELS,
- 	POWER_SUPPLY_PROP_CHARGING_ENABLED,
 };
 
 #define DEBUG_ACCESSORY_TEMP_DECIDEGC	250
@@ -2383,9 +2382,6 @@ static int smb5_batt_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_DYNAMIC_FV_ENABLED:
 		val->intval = chg->dynamic_fv_enabled;
 		break;
-	case POWER_SUPPLY_PROP_CHARGING_ENABLED:
-		rc = smblib_get_prop_battery_charging_enabled(chg, val);
-		break;
 	default:
 		pr_err("batt power supply prop %d not supported\n", psp);
 		return -EINVAL;
@@ -2495,9 +2491,6 @@ static int smb5_batt_set_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_DYNAMIC_FV_ENABLED:
 		chg->dynamic_fv_enabled = !!val->intval;
 		break;
-	case POWER_SUPPLY_PROP_CHARGING_ENABLED:
-		rc = smblib_set_prop_battery_charging_enabled(chg, val);
-		break;
 	case POWER_SUPPLY_PROP_FCC_STEPPER_ENABLE:
 		chg->fcc_stepper_enable = val->intval;
 		break;
@@ -2525,7 +2518,6 @@ static int smb5_batt_prop_is_writeable(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_DC_THERMAL_LEVELS:
 	case POWER_SUPPLY_PROP_LIQUID_DETECTION:
 	case POWER_SUPPLY_PROP_DYNAMIC_FV_ENABLED:
- 	case POWER_SUPPLY_PROP_CHARGING_ENABLED:
 		return 1;
 	default:
 		break;
