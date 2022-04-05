@@ -31,7 +31,7 @@
 #define GLINK_PKT_IPC_LOG_PAGE_CNT 2
 static void *glink_pkt_ilctxt;
 
-static int glink_pkt_debug_mask = 0;
+static int glink_pkt_debug_mask;
 module_param_named(debug_mask, glink_pkt_debug_mask, int, 0664);
 
 enum {

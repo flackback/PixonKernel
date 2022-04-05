@@ -242,41 +242,7 @@ struct smb5 {
 	struct smb_dt_props	dt;
 };
 
-
 static int __debug_mask = PR_MISC | PR_OEM | PR_WLS;
-
-/* @bsp, 20190417 Battery & Charging porting */
-static int smbchg_cutoff_volt_with_charger = 3240;
-struct smb_charger *g_chip;
-static const struct file_operations proc_ship_mode_operations;
-module_param_named(
-	cutoff_volt_with_charger,
-	smbchg_cutoff_volt_with_charger,
-	int, 0600);
-
-#define OF_PROP_READ(node, dt_property, prop, retval, optional)		\
-do {									\
-	if (retval)							\
-		break;							\
-	if (optional)							\
-		prop = -EINVAL;						\
-									\
-	retval = of_property_read_u32(node,		\
-					dt_property,	\
-					&prop);				\
-									\
-	if ((retval == -EINVAL) && optional)				\
-		retval = 0;						\
-	else if (retval)						\
-		pr_err("Error reading " #dt_property	\
-				" property rc = %d\n", rc);		\
-} while (0)
-
-#ifdef	CONFIG_OP_DEBUG_CHG
-	static int __debug_mask = PR_OP_DEBUG;
-#else
-static int __debug_mask = 0;
-#endif
 module_param_named(
 	debug_mask, __debug_mask, int, 0600
 );
