@@ -243,7 +243,7 @@ struct smb5 {
 };
 
 
-/* static int __debug_mask = PR_MISC | PR_OEM | PR_WLS; */
+static int __debug_mask = PR_MISC | PR_OEM | PR_WLS;
 
 /* @bsp, 20190417 Battery & Charging porting */
 static int smbchg_cutoff_volt_with_charger = 3240;
