@@ -63,7 +63,7 @@ static void thermal_throttle_worker(struct work_struct *work)
 					     throttle_work);
 	struct thermal_zone *new_zone, *old_zone;
 
-	int temp = 0, temp_cpus_avg = 0, temp_batt = 0,,temp_gpu = 0;
+	int temp = 0, temp_cpus_avg = 0, temp_batt = 0, temp_gpu = 0;
 
 	s64 temp_total = 0, temp_avg = 0;
 	short i = 0;
@@ -130,7 +130,7 @@ static void thermal_throttle_worker(struct work_struct *work)
 	if (new_zone != old_zone) {
 
 		pr_debug("temp_avg: %i, temp_gpu: %i\n", temp_avg, temp_gpu);
-[		t->curr_zone = new_zone;
+		t->curr_zone = new_zone;
 		update_online_cpu_policy();
 	}
 

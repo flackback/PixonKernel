@@ -6831,12 +6831,8 @@ static int fg_gen4_probe(struct platform_device *pdev)
 	if (!fg->battery_missing)
 		mod_delayed_work(system_freezable_power_efficient_wq, &fg->profile_load_work, 0);
 
-<<<<<<< HEAD
 	fg_gen4_post_init(chip);
 	schedule_delayed_work(&fg->soc_work, 0);
-=======
-	mod_delayed_work(system_freezable_power_efficient_wq, &fg->soc_work, 0);
->>>>>>> 375c235cc614... drivers: power: supply: qcom: relax wakeup events and optimize
 
 	fg->param.batt_soc = -EINVAL;
 	schedule_delayed_work(&fg->soc_monitor_work,
