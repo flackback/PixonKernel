@@ -1166,7 +1166,7 @@ config CPUSET_CAMERA
 	help
 	  The CPU mask to use for the camera-daemon cpuset.
 
-onfig CPUSET_DISPLAY
+config CPUSET_DISPLAY
 	string "Value for 'display' cpuset"
 	default "4-7"
 	help
