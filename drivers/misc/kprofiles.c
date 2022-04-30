@@ -7,7 +7,7 @@
 #include <linux/moduleparam.h>
 #include <linux/kprofiles.h>
 
-static unsigned int mode = 0;
+unsigned int mode = 0;
 module_param(mode, uint, 0664);
 
 
