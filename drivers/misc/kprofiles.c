@@ -14,12 +14,9 @@
 
 static bool screen_on = true;
 static unsigned int mode = 0;
-#if defined(CONFIG_AUTO_KPROFILES_MSM_DRM) || defined(CONFIG_AUTO_KPROFILES_FB)
 static unsigned int set_mode;
-#endif
 module_param(mode, uint, 0664);
 
-#if defined(CONFIG_AUTO_KPROFILES_MSM_DRM) || defined(CONFIG_AUTO_KPROFILES_FB)
 static int common_notifier_callback(struct notifier_block *self,
 				unsigned long event, void *data)
 {
@@ -76,7 +73,6 @@ static int common_notifier_callback(struct notifier_block *self,
 out:
 	return NOTIFY_OK;
 }
-#endif
 
 inline unsigned int active_mode(void)
 {
@@ -100,7 +96,6 @@ inline unsigned int active_mode(void)
     }
 }
 
-#if defined(CONFIG_AUTO_KPROFILES_MSM_DRM) || defined(CONFIG_AUTO_KPROFILES_FB)
 static struct notifier_block common_notifier_block = {
 	.notifier_call = common_notifier_callback,
 };
@@ -117,7 +112,6 @@ static int  __init kprofiles_notifier_init(void)
 }
 
 late_initcall(kprofiles_notifier_init);
-#endif
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Dakkshesh");
 MODULE_DESCRIPTION("KernelSpace Profiles");
