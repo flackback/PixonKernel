@@ -1780,7 +1780,7 @@ out_unlock:
 	return retval ?: nbytes;
 }
 
-#ifdef CONFIG_CPUSETS_ASSIST
+#ifdef CONFIG_CPUSET_ASSIST
 static ssize_t cpuset_write_resmask_assist(struct kernfs_open_file *of,
 					   struct cs_target tgt, size_t nbytes,
 					   loff_t off)
