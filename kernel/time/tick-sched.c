@@ -208,7 +208,7 @@ static bool check_tick_dependency(atomic_t *dep)
 
 static bool can_stop_full_tick(int cpu, struct tick_sched *ts)
 {
-	lockdep_assert_irqs_disabled();
+	WARN_ON_ONCE(!irqs_disabled());
 
 	if (unlikely(!cpu_online(cpu)))
 		return false;
@@ -1030,7 +1030,8 @@ void tick_nohz_idle_enter(void)
 {
 	struct tick_sched *ts;
 
-	lockdep_assert_irqs_enabled();
+	WARN_ON_ONCE(irqs_disabled());
+
 	/*
 	 * Update the idle state in the scheduler domain hierarchy
 	 * when tick_nohz_stop_tick() is called from the idle loop.
