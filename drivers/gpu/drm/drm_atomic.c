@@ -2405,4 +2405,4 @@ int drm_mode_atomic_ioctl(struct drm_device *dev, void *data,
 
 	return ret;
 }
->>>>>>> 2d6b259b61cc4 (drm: Reduce latency while processing atomic ioctls)
+
